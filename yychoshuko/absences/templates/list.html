@@ -1,0 +1,200 @@
+{% extends "chrome.html" %}
+
+{% block content %}
+<script>
+    var thisWeekOnly = true;
+    var currentClass = 'all';
+</script>
+<div class="container mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        {%  if selected_date %}
+        <h1 id="pageTitle">生徒欠課概要 {{ selected_date }}</h1>
+        {% else %}
+        <h1 id="pageTitle">生徒欠課概要閲覧ページ</h1>
+        {% endif %}
+        <div>
+            <a href="{{ url_for('absences.students') }}" class="btn btn-primary">生徒別欠課概要</a>
+            <a href="{{ url_for('staff.staff_logout') }}" class="btn btn-danger">ログアウト</a>
+        </div>
+    </div>    <div class="d-flex justify-content-between align-items-end">
+        <!-- Class Buttons for Filtering -->
+            <div class="btn-group mb-3" role="group" aria-label="Class Filters">
+                <button type="button" class="btn btn-secondary" onclick="filterAbsences('all', '全学年')">全学年</button>
+                {% for class in classes %}
+                    <button type="button" class="btn btn-secondary"
+                            onclick="filterAbsences('{{ class.id }}', '欠課概要 {{ class.name }}')">{{ class.name }}</button>
+                {% endfor %}
+                {%  if not selected_date %}
+                <button type="button" class="btn btn-info" id="modeButton" onclick="showNonCurrentAbsences()">すべての欠課連絡を見る</button>
+                {% endif %}
+            </div>
+
+        <!-- Date Selector -->
+        <div class="form-row align-items-center mb-3">
+            <div class="col-auto">
+                <label for="filterDate" class="form-label">日付指定:</label>
+            </div>
+            <div class="col-auto">
+                <input type="date" class="form-control" id="filterDate" name="filterDate" value="{{ selected_date }}">
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-primary" onclick="filterByDate()">送信</button>
+            </div>
+        </div>
+    </div>
+
+
+{#    <div class="container mt-3 mb-3">#}
+    <h2 id="currentClassHeading">生徒欠課概要</h2> <!-- Dynamic heading -->
+{#    </div>#}
+
+    <!-- Absences Table -->
+    <div class="table-responsive">
+        <table class="table">
+            <thead class="thead-dark">
+            <tr>
+                <th>生徒氏名</th>
+                <th>欠課種類</th>
+                <th>理由</th>
+                <th>日付</th>
+                <th>開始時間</th>
+                <th>終了時間</th>
+                <th>Email</th>
+                <th>宿題受け渡し方法</th>
+                <th>学年</th>
+                {% if current_user.user_type == 'A' %}
+                    <th>削除</th>
+                {% endif %}
+
+            </tr>
+            </thead>
+            <tbody>
+            {% set previous_date = None %}
+            {% for absence in absences %}
+                {% if previous_date and previous_date > this_saturday and absence.date <= this_saturday %}
+                    <tr>
+                        <td colspan="8" class="bg-dark"></td>
+                    </tr> <!-- Draw line for week boundary -->
+                {% endif %}
+
+                {%  if not selected_date %}
+                <tr {% if absence.date > this_saturday %}style="color: lightgrey; display: none;"{% elif absence.date < this_saturday %}
+                    style="color: gray; display: none;"{% endif %} class="absence-entry" data-absence-id="{{ absence.id }}"
+                    data-class-id="{{ absence.class_id }}"
+                    data-current="{% if absence.date != this_saturday %}false{% else %}true{% endif %}">
+                {% else %}
+                    <tr class="absence-entry" data-class-id="{{ absence.class_id }}"
+                    data-current="true">
+                {% endif %}
+                    <td>{{ absence.student_name }}</td>
+                    <td>{{ absence.absence_type }}</td>
+                    <td>{{ absence.reason }}</td>
+                    <td>{{ absence.date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ absence.start_time.strftime('%H:%M') if absence.start_time else ' ' }}</td>
+                    <td>{{ absence.end_time.strftime('%H:%M') if absence.end_time else ' ' }}</td>
+                    <td>{{ absence.parent_email }}</td>
+                    <td style="white-space: pre-wrap;"> {{ absence.comment }}</td>
+                    <td>{{ absence.course.name }}</td>
+                    {% if current_user.user_type == 'A' %}
+                        <td>
+                            <button class="btn btn-danger btn-sm" onclick="confirmDeleteAbsence({{ absence.id }})">
+                            削除
+                            </button>
+                        </td>
+                    {% endif %}
+                </tr>
+                {% set previous_date = absence.date %}
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function filterAbsences(classId, className) {
+        const rows = document.querySelectorAll('.absence-entry');
+        currentClass = classId;
+        rows.forEach(row => {
+            if ((classId === 'all' || parseInt(row.dataset.classId) === parseInt(currentClass))) {
+                if (row.dataset.current === 'true') {
+                    row.style.display = '';
+                } else if (thisWeekOnly === false) {
+                    row.style.display = '';
+                }
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        document.getElementById("currentClassHeading").textContent = className; // Update heading based on selected class
+
+    }
+
+    function showNonCurrentAbsences() {
+        const rows = document.querySelectorAll('.absence-entry');
+        rows.forEach(row => {
+            if (row.dataset.current === 'false' && (currentClass==='all' || row.dataset.classId === currentClass)) {
+                row.style.display = '';
+            }
+        });
+        const modeButton = document.getElementById("modeButton")
+        thisWeekOnly=false;
+        modeButton.innerText="今週の欠課連絡を見る"
+        modeButton.onclick= hideNonCurrentAbsences;
+    }
+
+    function hideNonCurrentAbsences() {
+        const rows = document.querySelectorAll('.absence-entry');
+        rows.forEach(row => {
+            if (row.dataset.current === 'false') {
+                row.style.display = 'none';
+            }
+        });
+        const modeButton = document.getElementById("modeButton")
+        thisWeekOnly = true;
+        modeButton.innerText="すべての欠課連絡を見る"
+        modeButton.onclick= showNonCurrentAbsences;
+    }
+
+    function filterByDate() {
+        const dateValue = document.getElementById('filterDate').value;
+        if (dateValue) {
+            const currentURL = window.location.href.split('?')[0];  // Remove any existing query parameters
+            window.location.href = `${currentURL}?filterDate=${dateValue}`;  // Redirect to the same route with the date as a query parameter
+        } else {
+            alert('Please select a date.');
+        }
+    }
+        function confirmDeleteAbsence(absenceId) {
+        // Show a confirmation dialog
+        if (confirm("この欠席記録を削除してもよろしいですか？")) {
+            // If confirmed, send an AJAX request to delete the absence
+            deleteAbsence(absenceId);
+        }
+    }
+
+    function deleteAbsence(absenceId) {
+        fetch(`/absences/api/delete_absence/${absenceId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': "{{ csrf_token() }}"  // Ensure CSRF token is sent
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove the row from the table
+                const row = document.querySelector(`tr[data-absence-id='${absenceId}']`);
+                if (row) {
+                    row.remove();  // Remove the row from the DOM
+                }
+            } else {
+                alert("削除に失敗しました。");
+            }
+        })        .catch(error => {
+            console.error('Error:', error);
+            alert("エラーが発生しました。もう一度お試しください。");
+        });
+    }
+</script>
+
+{% endblock %}

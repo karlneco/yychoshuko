@@ -1,0 +1,55 @@
+{% extends "chrome.html" %}
+
+{% block content %}
+<div class="container-sm">
+    <h1 class="mt-5">学期を編集する</h1>
+    <form action="{{ url_for('semester.edit', semester_id=semester.id) }}" method="post" class="mt-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="form-group">
+            <label for="name">学期名:</label>
+            <input type="text" id="name" name="name" class="form-control" value="{{ semester.name }}" required>
+        </div>
+        <div class="form-group">
+            <label for="start_date">開始日:</label>
+            <input type="date" id="start_date" name="start_date" class="form-control" value="{{ semester.start_date }}" required>
+        </div>
+        <div class="form-group">
+            <label for="end_date">終了日:</label>
+            <input type="date" id="end_date" name="end_date" class="form-control" value="{{ semester.end_date }}" required>
+        </div>
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-primary">保存</button>
+{#            <button type="button" class="btn btn-warning" onclick="populateRandomAbsences()">Populate Random Absences</button>#}
+
+            <div>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteSemester()">この学期を削除する</button>
+                <button type="button" class="btn btn-warning" onclick="confirmDeleteData()">この学期のデータを全て削除する</button>
+            </div>
+        </div>
+    </form>
+
+    <script>
+        function confirmDeleteSemester() {
+            if (confirm('Are you sure you want to delete this semester?')) {
+                window.location.href = "{{ url_for('semester.delete', semester_id=semester.id) }}";
+            }
+        }
+
+        function confirmDeleteData() {
+            if (confirm('Are you sure you want to delete this semester and all related absence data?')) {
+                window.location.href = "{{ url_for('semester.delete_data', semester_id=semester.id) }}";
+            }
+        }
+
+        {#function populateRandomAbsences() {#}
+        {#    window.location.href = "{{ url_for('semester.populate_absences', semester_id=semester.id) }}";#}
+        {#}#}
+
+    </script>
+
+    <!-- Bootstrap and jQuery scripts included as before -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.min.js"></script>
+</div>
+{% endblock %}

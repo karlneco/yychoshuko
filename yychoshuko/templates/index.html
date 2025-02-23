@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>School Absence Tracker</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="text-center mt-5">Welcome to the School Absence Tracker</h1>
+      <div class="row justify-content-center mt-5">
+        <div class="col-md-6">
+          <div class="list-group">
+            <a href="{{ url_for('absences.submit_absence') }}" class="list-group-item list-group-item-action">Submit an absence</a>
+            <a href="{{ url_for('staff.staff_login') }}" class="list-group-item list-group-item-action">Teacher login</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js" integrity="sha384-KyZXEAg3QhqLMpG8r+Knujsl5/5v5z7r6U5r6tmM9w4vz6U5x5x3hFxbw5C1yf8E" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.12.7/dist/umd/popper.min.js" integrity="sha384-l/exjlaU3MEw3wW6TOxVyDsJ1TlDEJl6U3mpzWJ2H3T6Kf3q0XDfUfmysTmEfvMJ" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.4.0-alpha1/dist/js/bootstrap.min.js" integrity="sha384-pzjw8f+ua7Kw1TIq0v8FqFjcJ6pajs/rfdfs3SO+kD4Ck5BdPtF+to8xMm9SmwYw" crossorigin="anonymous"></script>
+  </body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Absence Notification</title>
+    <style>
+        /* General styling */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        .email-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background-color: #007bff;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        .content {
+            padding: 20px;
+        }
+        .footer {
+            font-size: 12px;
+            color: #6c757d;
+            text-align: center;
+            padding: 10px;
+            border-top: 1px solid #e9ecef;
+            background-color: #f8f9fa;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .table th,
+        .table td {
+            padding: 8px;
+            border: 1px solid #dee2e6;
+            text-align: left;
+        }
+        .table th {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h2>欠席欠課連絡受領のお知らせ</h2>
+        </div>
+        <div class="content">
+            <p>{{ grade }}{{ student_name }}さん</p>
+            <p>欠席欠課のご連絡をありがとうございます。</p>
+            <p>担任及び必要な先生方（To欄にメアドがある先生）と以下の内容を共有しております。</p>
+            <p><b>欠席欠課の内容（日付、時間、理由）に変更がある場合</b>はこのメールに返信せずに<b>再度フォームをご提出</b>ください。</p>
+            <p>宿題の受け渡し等についての<b>追加のご連絡がある場合は、このメールに「全員に返信」</b>で返信して、ご連絡ください。</p>
+
+</p>
+            <p>
+                報告の種類:　<strong>{{ absence_type }}</strong><br/>
+                日付:　<strong>{{ date }}</strong> <br/>
+                {% if absence_type == '遅刻' %}
+                    登校予定時刻: {% if start_time %}<strong>{{ start_time.strftime('%H:%M') }}</strong>{% endif %}
+                {% elif absence_type == '早退' %}
+                    早退予定時刻: {% if end_time %}<strong>{{ end_time.strftime('%H:%M') }}</strong>{% endif %}
+                {% elif absence_type == '中抜け' %}
+                    中抜け予定時刻: {% if start_time %}<strong>{{ start_time.strftime('%H:%M') }}</strong>{% endif %}<br/>
+                    学校に戻る予定時刻: {% if end_time %}<strong>{{ end_time.strftime('%H:%M') }}</strong>{% endif %}
+                {% endif %}
+                <br/>
+                理由:　<strong>{{ reason }}</strong> <br/>
+                担任への連絡があればご記入ください: <br/>
+                <pre>{{ comment }}</pre>
+            </p>
+
+            <hr/>
+            カルガリー補習授業校
+        </div>
+    </div>
+</body>
+</html>
