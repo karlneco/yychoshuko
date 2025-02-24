@@ -20,9 +20,9 @@
         <!-- Class Buttons for Filtering -->
             <div class="btn-group mb-3" role="group" aria-label="Class Filters">
                 <button type="button" class="btn btn-secondary" onclick="filterAbsences('all', '全学年')">全学年</button>
-                {% for class in classes %}
+                {% for grade in grades %}
                     <button type="button" class="btn btn-secondary"
-                            onclick="filterAbsences('{{ class.id }}', '欠課概要 {{ class.name }}')">{{ class.name }}</button>
+                            onclick="filterAbsences('{{ grade.id }}', '欠課概要 {{ grade.name }}')">{{ grade.name }}</button>
                 {% endfor %}
                 {%  if not selected_date %}
                 <button type="button" class="btn btn-info" id="modeButton" onclick="showNonCurrentAbsences()">すべての欠課連絡を見る</button>
@@ -80,10 +80,10 @@
                 {%  if not selected_date %}
                 <tr {% if absence.date > this_saturday %}style="color: lightgrey; display: none;"{% elif absence.date < this_saturday %}
                     style="color: gray; display: none;"{% endif %} class="absence-entry" data-absence-id="{{ absence.id }}"
-                    data-class-id="{{ absence.class_id }}"
+                    data-class-id="{{ absence.grade_id }}"
                     data-current="{% if absence.date != this_saturday %}false{% else %}true{% endif %}">
                 {% else %}
-                    <tr class="absence-entry" data-class-id="{{ absence.class_id }}"
+                    <tr class="absence-entry" data-class-id="{{ absence.grade_id }}"
                     data-current="true">
                 {% endif %}
                     <td>{{ absence.student_name }}</td>
@@ -94,7 +94,7 @@
                     <td>{{ absence.end_time.strftime('%H:%M') if absence.end_time else ' ' }}</td>
                     <td>{{ absence.parent_email }}</td>
                     <td style="white-space: pre-wrap;"> {{ absence.comment }}</td>
-                    <td>{{ absence.course.name }}</td>
+                    <td>{{ absence.grade.name }}</td>
                     {% if current_user.user_type == 'A' %}
                         <td>
                             <button class="btn btn-danger btn-sm" onclick="confirmDeleteAbsence({{ absence.id }})">

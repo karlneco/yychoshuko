@@ -1,6 +1,6 @@
 # yychoshuko/tests/test_staff_edit.py
 
-from yychoshuko.models import User, Class
+from yychoshuko.models import User, Grade
 from base_test import BaseTestCase, db
 
 class StaffEditTestCase(BaseTestCase):

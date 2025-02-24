@@ -12,7 +12,7 @@
     </style>
     <div class="container mt-5">
         <h1>Edit Class</h1>
-        <form method="post" action="{{ url_for('course.edit', course_id=course.id) }}">
+        <form method="post" action="{{ url_for('grade.edit', course_id=course.id) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="action" id="formAction" value="save">
 
@@ -113,9 +113,9 @@
         }
 
         function confirmDelete() {
-            if (confirm('Are you sure you want to delete this course?')) {
+            if (confirm('Are you sure you want to delete this grade?')) {
                 // Redirect to the delete route if confirmed
-                window.location.href = "{{ url_for('course.delete', course_id=course.id) }}";
+                window.location.href = "{{ url_for('grade.delete', course_id=course.id) }}";
             }
         }
 

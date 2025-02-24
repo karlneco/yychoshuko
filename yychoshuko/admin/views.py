@@ -3,7 +3,7 @@ from flask_login import login_required, logout_user
 from werkzeug.security import generate_password_hash
 
 from yychoshuko import db
-from yychoshuko.models import Class, User, staff_class
+from yychoshuko.models import Grade, User, staff_grade
 from yychoshuko.util import admin_required
 
 admin_bp = Blueprint('admin', __name__, template_folder='templates')
@@ -48,10 +48,10 @@ def staff_edit(staff_id):
     if not staff:
         abort(404)
 
-    staff_classes = [{'id': c.id, 'name': c.name} for c in staff.classes]
+    staff_grades = [{'id': c.id, 'name': c.name} for c in staff.grades]
 
-    classes = Class.query.all()
-    all_classes = [{'id': c.id, 'name': c.name} for c in classes]
+    grades = Grade.query.all()
+    all_grades = [{'id': c.id, 'name': c.name} for c in grades]
 
     if request.method == 'POST':
         # Update teacher data based on form input
@@ -66,15 +66,15 @@ def staff_edit(staff_id):
         # Redirect to the teacher list or another page
         return redirect(url_for('admin.staff_list'))
 
-    return render_template('staff_edit.html', staff=staff, classes=staff_classes, all_classes=all_classes)
+    return render_template('staff_edit.html', staff=staff, grades=staff_grades, all_grades=all_grades)
 
 
 @admin_bp.route('/courses')
 @login_required
 @admin_required
 def course_list():
-    courses = Class.query.all()
-    return render_template('courses.html', courses=courses)
+    courses = Grade.query.all()
+    return render_template('grades.html', courses=courses)
 
 
 @admin_bp.route('/admin/reset_password/<int:staff_id>', methods=['POST'])
@@ -103,55 +103,55 @@ def reset_password(staff_id):
 
 
 # Route to get the classes for a specific teacher
-@admin_bp.route('/api/staff_classes/<int:staff_id>', methods=['GET'])
+@admin_bp.route('/api/staff_grades/<int:staff_id>', methods=['GET'])
 @login_required
 @admin_required
 def get_staff_classes(staff_id):
     staff = User.query.get(staff_id)
     if staff:
-        classes = [{'id': c.id, 'name': c.name} for c in staff.classes]
-        return jsonify({'classes': classes})
+        grades = [{'id': c.id, 'name': c.name} for c in staff.grades]
+        return jsonify({'grades': grades})
     else:
         return jsonify({'classes': []})
 
 
 # Route to get all available classes
-@admin_bp.route('/api/all_classes', methods=['GET'])
+@admin_bp.route('/api/all_grades', methods=['GET'])
 @login_required
 @admin_required
 def get_all_classes():
-    classes = Class.query.all()
-    all_classes = [{'id': c.id, 'name': c.name} for c in classes]
-    return jsonify({'classes': all_classes})
+    grades = Grade.query.all()
+    all_grades = [{'id': c.id, 'name': c.name} for c in grades]
+    return jsonify({'grades': all_grades})
 
-@admin_bp.route('/api/add_class/<int:class_id>/<int:staff_id>', methods=['GET'])
+@admin_bp.route('/api/add_grade/<int:grade_id>/<int:staff_id>', methods=['GET'])
 @login_required
 @admin_required
-def add_class(class_id, staff_id):
+def add_class(grade_id, staff_id):
     staff = User.query.get(staff_id)
-    class_to_add = Class.query.get(class_id)
+    grade_to_add = Grade.query.get(grade_id)
 
-    if staff and class_to_add:
-        staff.classes.append(class_to_add)
+    if staff and grade_to_add:
+        staff.grades.append(grade_to_add)
         db.session.commit()
         return jsonify({'message': 'Class added successfully'})
     else:
         return jsonify({'error': 'Teacher or class not found'})
 
 # Route to remove a class from a teacher
-@admin_bp.route('/api/remove_class/<int:class_id>/<int:staff_id>', methods=['GET'])
+@admin_bp.route('/api/remove_grade/<int:grade_id>/<int:staff_id>', methods=['GET'])
 @login_required
 @admin_required
-def remove_class(class_id, staff_id):
+def remove_class(grade_id, staff_id):
     staff = User.query.get(staff_id)
-    class_to_remove = Class.query.get(class_id)
+    grade_to_remove = Grade.query.get(grade_id)
 
-    if staff and class_to_remove:
+    if staff and grade_to_remove:
         # Find all instances of the association and delete them
-        association_table = staff_class
+        association_table = staff_grade
         association_query = association_table.delete().where(
             association_table.c.user_id == staff_id,
-            association_table.c.class_id == class_id
+            association_table.c.grade_id == grade_id
         )
         db.session.execute(association_query)
         db.session.commit()

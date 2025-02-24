@@ -3,7 +3,7 @@ from datetime import datetime
 from flask import render_template, Blueprint, current_app
 
 from yychoshuko.absence_form import AbsenceForm
-from yychoshuko.models import Class
+from yychoshuko.models import Grade
 
 valid_reasons = ['Absent', 'Late', 'Leaving Early', 'Absent for a Time', '欠席', '遅刻', '早退', '時間で欠席']
 
@@ -16,10 +16,10 @@ def index():
 
     default_course_choice = [('', '学年を選択してください')]
     form.class_id.choices = default_course_choice + [
-        (cls.id, cls.name, {'data-instructions': cls.instructions or 'None'}) for cls in Class.query.all()
+        (cls.id, cls.name, {'data-instructions': cls.instructions or 'None'}) for cls in Grade.query.all()
     ]
 
-    classes = Class.query.all()
+    grades = Grade.query.all()
     today = datetime.today().strftime('%Y-%m-%d')
     return render_template('new_absence.html', form=form, today=today)
 

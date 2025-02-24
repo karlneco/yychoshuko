@@ -1,4 +1,4 @@
-from yychoshuko.models import User, Class, staff_class
+from yychoshuko.models import User, Grade, staff_grade
 from base_test import BaseTestCase, db
 
 
@@ -20,17 +20,17 @@ class StaffDeletionTestCase(BaseTestCase):
         db.session.commit()
 
         # Create a sample class and associate it with the staff member
-        self.sample_class = Class(name='Sample Class')
-        db.session.add(self.sample_class)
+        self.sample_grade = Grade(name='Sample Class')
+        db.session.add(self.sample_grade)
         db.session.commit()
 
-        self.staff_user.classes.append(self.sample_class)
+        self.staff_user.grades.append(self.sample_grade)
         db.session.commit()
 
     def test_staff_deletion(self):
         # Ensure the staff member and association exist
         self.assertIsNotNone(User.query.get(self.staff_user.id))
-        self.assertIn(self.sample_class, self.staff_user.classes)
+        self.assertIn(self.sample_grade, self.staff_user.grades)
 
         # Delete the staff member
         print(self.staff_user.id)
@@ -43,7 +43,7 @@ class StaffDeletionTestCase(BaseTestCase):
 
         # Verify that the association between the staff member and class was removed
         result = db.session.execute(
-            staff_class.select().where(staff_class.c.user_id == self.staff_user.id)
+            staff_grade.select().where(staff_grade.c.user_id == self.staff_user.id)
         ).fetchall()
         self.assertEqual(len(result), 0)
 

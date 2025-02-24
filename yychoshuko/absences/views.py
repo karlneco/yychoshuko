@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, date, timedelta
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, get_flashed_messages, current_app, \
@@ -8,7 +9,7 @@ from wtforms.validators import DataRequired
 
 from yychoshuko import db, mail, bcc_address
 from yychoshuko.absence_form import AbsenceForm
-from yychoshuko.models import Absence, Class, load_user, User, Semester, load_course
+from yychoshuko.models import Absence, Grade, load_user, User, Semester, load_grade
 from yychoshuko.util import admin_required
 
 absences_bp = Blueprint('absences', __name__, template_folder='templates')
@@ -22,17 +23,17 @@ def record_absence():
 
     default_course_choice = [('', '学年を選択してください')]
     form.class_id.choices = default_course_choice + [
-        (cls.id, cls.name, {'data-instructions': cls.instructions or 'None'}) for cls in Class.query.all()
+        (cls.id, cls.name, {'data-instructions': cls.instructions or 'None'}) for cls in Grade.query.all()
     ]
 
     if request.method == 'POST':
-        reason = form.reason.data
+        absence_type = form.absence_type.data
         # Add conditional validators
-        if reason == '遅刻':
-            form.start_time.validators.append(DataRequired(message="Expected time is required for 'Late'."))
-        if reason == '早退':
+        if absence_type == '遅刻':
+            form.start_time.validators = [DataRequired(message="Expected time is required for 'Late'.")]
+        if absence_type == '早退':
             form.end_time.validators.append(DataRequired(message="Leaving time is required for 'Leaving Early'."))
-        if reason == '中抜け':
+        if absence_type == '中抜け':
             form.start_time.validators.append(DataRequired(message="Leaving time is required for 'Absent for a Time'."))
             form.end_time.validators.append(DataRequired(message="Return time is required for 'Absent for a Time'."))
 
@@ -50,8 +51,8 @@ def record_absence():
 
     if len(captcha_response) > 0:
         parent_email = form.parent_email.data
-        class_id = form.class_id.data
-        grade_name = load_course(class_id).name
+        grade_id = form.class_id.data
+        grade_name = load_grade(grade_id).name
         student_name = form.student_name.data
         absence_type = form.absence_type.data
         reason = form.reason.data
@@ -66,7 +67,7 @@ def record_absence():
         absence = Absence(
             student_name=student_name,
             reason=reason,
-            class_id=class_id,
+            class_id=grade_id,
             date=date,
             start_time=start_time,
             end_time=end_time,
@@ -77,7 +78,7 @@ def record_absence():
         db.session.add(absence)
         db.session.commit()
 
-        cls = Class.query.get(class_id)
+        cls = Grade.query.get(grade_id)
         if cls:
             staff_emails = [user.email for user in cls.staff]
             send_absence_notification(parent_email, staff_emails, student_name, grade_name, absence_type, reason, date,
@@ -106,9 +107,9 @@ def list():
         return redirect(url_for('login'))
 
     if user.user_type == 'A':
-        classes = Class.query.all()
+        grades = Grade.query.all()
     else:
-        classes = user.classes
+        grades = user.grades
     all_absences = []
     date_filter = request.args.get('filterDate')  # Get date filter from query parameters
 
@@ -118,19 +119,19 @@ def list():
     except TypeError:
         selected_date = None
 
-    for class_obj in classes:
+    for grade_obj in grades:
         if selected_date:
             # Filter absences by class and selected date if a date is provided
-            absences = Absence.query.filter_by(class_id=class_obj.id, date=selected_date).all()
+            absences = Absence.query.filter_by(class_id=grade_obj.id, date=selected_date).all()
         else:
             # Get all absences if no date is provided
-            absences = Absence.query.filter_by(class_id=class_obj.id).all()
+            absences = Absence.query.filter_by(class_id=grade_obj.id).all()
         all_absences.extend(absences)
 
     all_absences_sorted = sorted(all_absences, key=lambda x: x.date, reverse=True)
     this_saturday = date.today() + timedelta((5 - date.today().weekday()) % 7)
 
-    return render_template('list.html', absences=all_absences_sorted, classes=classes, this_saturday=this_saturday,
+    return render_template('list.html', absences=all_absences_sorted, grades=grades, this_saturday=this_saturday,
                            selected_date=selected_date)
 
 
@@ -158,9 +159,9 @@ def students():
 
     # Fetch all classes where the teacher is involved
     if user.user_type == 'A':
-        classes = Class.query.all()
+        grades = Grade.query.all()
     else:
-        classes = Class.query.join(Class.staff).filter(User.id == current_user.id).all()
+        grades = Grade.query.join(Grade.staff).filter(User.id == current_user.id).all()
 
     semesters = Semester.query.order_by(Semester.start_date.asc()).all()  # Order by start date descending
     selected_semester_id = request.args.get('semester_id', type=int)
@@ -181,7 +182,7 @@ def students():
 
     class_absences_summary = {}
     if selected_semester:
-        for cls in classes:
+        for cls in grades:
             student_absences = {}
             for absence in cls.absences:
                 if selected_semester.start_date <= absence.date <= selected_semester.end_date:
@@ -209,15 +210,15 @@ def student_absences(grade, student_name):
     selected_semester_id = request.args.get('semester_id', type=int)
 
     if selected_semester_id is None or selected_semester_id == -1:  # -1 for 'All Time'
-        absences = Absence.query.join(Absence.course).filter(Absence.student_name == student_name,
-                                                             Class.id == grade).all()
+        absences = Absence.query.join(Absence.grade).filter(Absence.student_name == student_name,
+                                                             Grade.id == grade).all()
         selected_semester = None
     else:
         selected_semester = Semester.query.get(selected_semester_id)
         absences = Absence.query.join(Absence.course).filter(
             Absence.student_name == student_name,
             Absence.date.between(selected_semester.start_date, selected_semester.end_date),
-            Class.id == grade
+            Grade.id == grade
         ).all()
 
     days_missed = 0
@@ -281,20 +282,22 @@ def send_absence_notification(parent_email, recipients, student_name, grade, abs
     """
     Send email notifications to the specified recipients about the student's absence.
     """
-    subject = grade + student_name + "さんの欠席欠課連絡受領のお知らせ_" + absence_date.strftime('%Y-%m-%d')
-    body = render_template(
-        'absence_notification.html',
-        student_name=student_name,
-        grade=grade,
-        reason=reason,
-        absence_type=absence_type,
-        date=absence_date,
-        start_time=start_time,
-        end_time=end_time,
-        comment=comment
-    )
-    cc_ = [current_app.config['MAIL_CC']]
-    recipients.append(parent_email)
-    msg = Message(subject, recipients=recipients, cc=cc_, html=body)
-    msg.sender = ('カルガリー補習授業校', current_app.config['MAIL_DEFAULT_SENDER'])
-    mail.send(msg)
+    is_production = os.getenv('FLASK_ENV') == 'production'
+    if is_production:
+        subject = grade + student_name + "さんの欠席欠課連絡受領のお知らせ_" + absence_date.strftime('%Y-%m-%d')
+        body = render_template(
+            'absence_notification.html',
+            student_name=student_name,
+            grade=grade,
+            reason=reason,
+            absence_type=absence_type,
+            date=absence_date,
+            start_time=start_time,
+            end_time=end_time,
+            comment=comment
+        )
+        cc_ = [current_app.config['MAIL_CC']]
+        recipients.append(parent_email)
+        msg = Message(subject, recipients=recipients, cc=cc_, html=body)
+        msg.sender = ('カルガリー補習授業校', current_app.config['MAIL_DEFAULT_SENDER'])
+        mail.send(msg)

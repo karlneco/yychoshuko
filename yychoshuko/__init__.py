@@ -72,14 +72,14 @@ def register_blueprints(app):
     from yychoshuko.views import root_bp
     from yychoshuko.absences.views import absences_bp
     from yychoshuko.staff.views import staff_bp
-    from yychoshuko.course.views import courses_bp
+    from yychoshuko.grade.views import grade_bp
     from yychoshuko.admin.views import admin_bp
     from yychoshuko.semester.views import semester_bp
 
     app.register_blueprint(root_bp, url_prefix='/')
     app.register_blueprint(absences_bp, url_prefix='/absences')
     app.register_blueprint(staff_bp, url_prefix='/staff')
-    app.register_blueprint(courses_bp, url_prefix='/courses')
+    app.register_blueprint(grade_bp, url_prefix='/courses')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(semester_bp, url_prefix='/semester')
 

@@ -6,7 +6,7 @@ from flask_login import login_required
 from sqlalchemy.exc import IntegrityError
 
 from yychoshuko import db
-from yychoshuko.models import Class, Absence, Semester
+from yychoshuko.models import Grade, Absence, Semester
 from yychoshuko.util import admin_required
 
 semester_bp = Blueprint('semester', __name__, template_folder='templates')
@@ -131,7 +131,7 @@ def populate_absences(semester_id):
     while current_date <= end_date:
         if current_date.weekday() == 5:  # Assuming absences are registered on Saturdays
             for class_name, students in students_per_class.items():
-                class_id = Class.query.filter_by(name=class_name).first().id  # Get class id for the relationship
+                class_id = Grade.query.filter_by(name=class_name).first().id  # Get class id for the relationship
                 for student_name in random.sample(students, k=random.randint(1, min(6, len(students)))):
                     absence_date = current_date
                     generate_and_add_absence(student_name, class_id, absence_date)

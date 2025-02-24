@@ -34,8 +34,8 @@ class AbsenceForm(FlaskForm):
     ], validators=[DataRequired()])
     other_reason = StringField('Please specify')
     date = DateField('Date', format='%Y-%m-%d', validators=[DataRequired()])
-    start_time = TimeField('Start Time', validators=(validators.Optional(),))
-    end_time = TimeField('End Time', validators=(validators.Optional(),))
+    start_time = TimeField('Start Time', validators=[validators.Optional(),])
+    end_time = TimeField('End Time', validators=[validators.Optional(),])
     comment = TextAreaField('Comment', validators=[DataRequired()])
     is_production = os.getenv('FLASK_ENV') == 'production'
     if is_production:
